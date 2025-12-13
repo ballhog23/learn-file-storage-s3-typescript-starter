@@ -1,4 +1,5 @@
 import { getBearerToken, validateJWT } from "../auth";
+import { randomBytes } from "node:crypto";
 import { respondWithJSON } from "./json";
 import { getVideo, updateVideo } from "../db/videos";
 import { getAssetDiskPath, getAssetURL, mediaTypeToExt } from "./assets";
@@ -52,8 +53,9 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
     throw new Error("Error reading file data");
   }
 
+  const uuid = randomBytes(32).toBase64();
   const ext = mediaTypeToExt(mediaType);
-  const filename = `${videoId}${ext}`;
+  const filename = `${uuid}${ext}`;
 
   const assetDiskPath = getAssetDiskPath(cfg, filename);
   await Bun.write(assetDiskPath, file);
