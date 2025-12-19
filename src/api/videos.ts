@@ -77,7 +77,7 @@ async function getVideoAspectRatio(filePath: string): Promise<"landscape" | "por
       "-select_streams",
       "v:0",
       "-show_entries",
-      "stream=width,height",
+      "stream=display_aspect_ratio",
       "-of",
       "json",
       filePath,
@@ -102,9 +102,9 @@ async function getVideoAspectRatio(filePath: string): Promise<"landscape" | "por
     throw new Error("No video streams found");
   }
 
-  const { aspectRatio } = output;
+  const { display_aspect_ratio } = output.streams[0];
 
-  switch (aspectRatio) {
+  switch (display_aspect_ratio) {
     case "16:9":
       return 'landscape';
     case "9:16":
