@@ -51,14 +51,66 @@ export async function handlerUploadVideo(cfg: ApiConfig, req: BunRequest) {
   const tempFilePath = path.join("/tmp", `${videoId}.mp4`);
 
   await Bun.write(tempFilePath, videoFile);
-  let key = `${videoId}.mp4`;
+  // read aspect ratio of tmp file, if i write here will it wait for bun.write? or should we wrap it in a promise.resolve.then
+  const aspectRatio = await getVideoAspectRatio(tempFilePath);
+  console.log('ASPECT RATIO: ', aspectRatio);
+  let key = `${aspectRatio}/${videoId}.mp4`;
+  console.log('KEY FOR S3: ', key);
   await uploadVideoToS3(cfg, key, tempFilePath, "video/mp4");
 
   const videoURL = `https://${cfg.s3Bucket}.s3.${cfg.s3Region}.amazonaws.com/${key}`;
+  console.log("CLICK HERE: ", videoURL);
   video.videoURL = videoURL;
   updateVideo(cfg.db, video);
 
   await Promise.all([rm(tempFilePath, { force: true })]);
 
   return respondWithJSON(200, video);
+}
+
+// returns dynamic path for s3 key, union of landscape, portait, other
+async function getVideoAspectRatio(filePath: string): Promise<"landscape" | "portrait" | "other"> {
+  const process = Bun.spawn(
+    [
+      "ffprobe",
+      "-v",
+      "error",
+      "-select_streams",
+      "v:0",
+      "-show_entries",
+      "stream=width,height",
+      "-of",
+      "json",
+      filePath,
+    ],
+    {
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+
+  const outputText = await new Response(process.stdout).text();
+  const errorText = await new Response(process.stderr).text();
+
+  const exitCode = await process.exited;
+
+  if (exitCode !== 0) {
+    throw new Error(`ffprobe error: ${errorText}`);
+  }
+
+  const output = JSON.parse(outputText);
+  if (!output.streams || output.streams.length === 0) {
+    throw new Error("No video streams found");
+  }
+
+  const { aspectRatio } = output;
+
+  switch (aspectRatio) {
+    case "16:9":
+      return 'landscape';
+    case "9:16":
+      return 'portrait';
+    default:
+      return 'other';
+  }
 }
