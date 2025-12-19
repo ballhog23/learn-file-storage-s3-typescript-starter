@@ -49,7 +49,7 @@ export async function handlerUploadVideo(cfg: ApiConfig, req: BunRequest) {
   }
 
   const tempFilePath = path.join("/tmp", `${videoId}.mp4`);
-  console.log(tempFilePath);
+
   await Bun.write(tempFilePath, videoFile);
   let key = `${videoId}.mp4`;
   await uploadVideoToS3(cfg, key, tempFilePath, "video/mp4");
