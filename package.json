@@ -7,13 +7,13 @@
     "dev": "bun --watch run ./src/index.ts"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.7",
-    "@types/jsonwebtoken": "^9.0.9"
+    "@types/bun": "^1.3.9",
+    "@types/jsonwebtoken": "^9.0.10"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.3"
   }
 }
