@@ -1,11 +1,11 @@
 
 import { type ApiConfig } from "../config";
-import { uploadVideoToS3 } from "../s3";
+import { uploadVideoToS3, generatePresignedURL } from "../s3";
 import { rm } from "fs/promises";
 import path from "path";
-import { file, s3, type BunRequest } from "bun";
+import { file, s3, S3Client, type BunRequest } from "bun";
 import { getBearerToken, validateJWT } from "../auth";
-import { getVideo, updateVideo } from "../db/videos";
+import { getVideo, updateVideo, type Video } from "../db/videos";
 import { respondWithJSON } from "./json";
 import { BadRequestError, UserForbiddenError, NotFoundError } from "./errors";
 
@@ -56,9 +56,10 @@ export async function handlerUploadVideo(cfg: ApiConfig, req: BunRequest) {
   const fastStart = await processVideoForFastStart(tempFilePath);
   await uploadVideoToS3(cfg, key, fastStart, "video/mp4");
 
-  const videoURL = `https://${cfg.s3Bucket}.s3.${cfg.s3Region}.amazonaws.com/${key}`;
+  const videoURL = `https://${cfg.s3CfDistribution}/${key}`;
 
   video.videoURL = videoURL;
+
   updateVideo(cfg.db, video);
 
   await Promise.all([
